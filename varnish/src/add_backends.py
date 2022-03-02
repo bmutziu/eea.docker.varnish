@@ -159,6 +159,24 @@ if sys.argv[1] == "dns":
 ################################################################################
 
 elif sys.argv[1] == "env":
+    ips = {}
+    for index, backend_server in enumerate(BACKENDS):
+        server_port = backend_server.split(':')
+        host = server_port[0]
+        port = server_port[1] if len(server_port) > 1 else BACKENDS_PORT
+        try:
+            records = subprocess.check_output(["getent", "hosts", host])
+        except Exception as err:
+            print(err)
+            continue
+        else:
+            for record in records.splitlines():
+                ip = record.split()[0].decode()
+                ips[ip] = host
+
+    with open('/etc/varnish/env.backends', 'w') as bfile:
+        bfile.write(' '.join(sorted(ips)))
+
     name = "backends"
     directors = set()
     for index, host in enumerate(BACKENDS):

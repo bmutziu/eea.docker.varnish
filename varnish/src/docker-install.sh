@@ -40,11 +40,19 @@ runDeps="
     libvarnishapi1
     python3-dev
     python3-pip
+    python3-setuptools
     libmhash2
     libmicrohttpd-dev
     libcurl4-gnutls-dev
     rsyslog
     cron
+    procps
+    net-tools
+    tcpdump
+    less
+    git
+    openjdk-8-jre-headless
+    iputils-ping
 "
 
 echo "========================================================================="
@@ -53,7 +61,6 @@ echo "========================================================================="
 
 apt-get update
 apt-get install -y --no-install-recommends $buildDeps
-
 
 echo "========================================================================="
 echo "Adding varnish user"
@@ -66,7 +73,7 @@ echo "========================================================================="
 echo "Installing varnish"
 echo "========================================================================="
 
-curl -fSL "https://varnish-cache.org/_downloads/$VARNISH_FILENAME" -o "$VARNISH_FILENAME"
+curl --http1.1 -fSL "https://varnish-cache.org/_downloads/$VARNISH_FILENAME" -o "$VARNISH_FILENAME"
 echo "$VARNISH_SHA256 *$VARNISH_FILENAME" | sha256sum -c -
 mkdir -p /usr/local/src
 tar -xzf "$VARNISH_FILENAME" -C /usr/local/src
@@ -142,6 +149,11 @@ echo "========================================================================="
 
 apt-get install -y --no-install-recommends $runDeps
 
+echo "========================================================================="
+echo "Installing supervisord"
+echo "========================================================================="
+
+pip3 install wheel supervisor git+https://github.com/coderanger/supervisor-stdout && mkdir -p /var/log/supervisor
 
 echo "========================================================================="
 echo "Configuring crontab logging"
@@ -150,6 +162,7 @@ echo "========================================================================="
 
 sed -i '/#cron./c\cron.*                          \/proc\/1\/fd\/1'  /etc/rsyslog.conf
 sed -i 's/-\/var\/log\/syslog/\/proc\/1\/fd\/1/g' /etc/rsyslog.conf
+sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
 
 echo "========================================================================="
